@@ -1,13 +1,19 @@
+/**
+ * JS -> WP
+ * 【イベント情報】
+ */
+
 /** *********************************************************************************
  * メディアアップロード
  * @param {String} file_base64 - base64形式に変換された画像ファイル文字列
  ********************************************************************************* */
 async function upload_media(file_base64) {
-
   const fUploadFd = new FormData();
   fUploadFd.append('action', 'uploadMedia');
   fUploadFd.append('file', file_base64);
+
   return await axios_admin_ajax(fUploadFd);
+  // { id: xxx, url: https://...jp/~/~.png }
 }
 
 /** *********************************************************************************
@@ -15,17 +21,17 @@ async function upload_media(file_base64) {
  ********************************************************************************* */
 async function post_wp() {
   const data = {
-    action      : 'upsertPost',   // 実行されるWP PHP関数
-    post_author : WP_UID,         // 事業者ユーザーID(WP_UID)
-    post_id     : null,           // 投稿ID(あれば更新、なければ新規)
-    post_type   : 'events',       // 【固定値】
-    post_title  : '',             // タイトル
-    post_date   : '',             // 日時(yyyy-MM-dd HH:mm:ss)
+    action      : 'upsertPost', // 実行されるWP PHP関数
+    post_author : xxx,          // 事業者ユーザーID(WP_UID)
+    post_id     : xxx,          // 投稿ID(あれば更新、なければ新規)
+    post_type   : 'events',
+    post_title  : '',           // タイトル
+    post_date   : '',           // 日時(yyyy-MM-dd HH:mm:ss)
+    post_status : '',           // 'draft':下書き | 'publish':公開 | 'private':公開終了 | 'trash':削除
     taxonomies  : {
-      cities    : [],   // タームID
-      cat_events: [],   // タームID
+      cities    : [],   // 市区町村カテゴリータームID（配列）
+      cat_events: [],   // イベントカテゴリータームID（配列）
     },
-    post_status : '',   // draft:下書き, publish:公開, private:公開終了
     acf         : {
       ギャラリー  : [],     // メディアID
       開催日_自_  : '',     // 日付(yyyy-MM-dd)
@@ -53,12 +59,20 @@ async function post_wp() {
 
   console.log(post)
 }
+
+
 /** ***************************************************************************
  * admin ajax
  *************************************************************************** */
 async function axios_admin_ajax(param) {
   const admin_ajax_url = `https://minna.digital-town.jp/wp-admin/admin-ajax.php`;
-  return await axios.post(admin_ajax_url, param).then(res => {
+  return await axios({
+    url: admin_ajax_url,
+    data: param,
+    method: 'POST',
+    headers: { 'Content-Type': (param) ? 'application/json' : 'multipart/form-data' },
+    responseType: 'json',
+  }).then(res => {
     if (res.status === 200) {
       return res.data;
     } else {
